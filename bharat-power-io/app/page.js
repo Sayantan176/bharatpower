@@ -651,7 +651,7 @@ const SolarCalculator = ({ tariffs }) => {
                 }}
               >
                 <Building2 size={11} style={{ display: "inline", marginRight: "5px" }} />
-                GridMap
+                GRIDMAP
               </button>
               <button
                 onClick={() => setCurrentPage("carbon")}
@@ -667,7 +667,7 @@ const SolarCalculator = ({ tariffs }) => {
                 }}
               >
                 <Building2 size={11} style={{ display: "inline", marginRight: "5px" }} />
-                carbon
+                CARBON
               </button>
             </div>
             
