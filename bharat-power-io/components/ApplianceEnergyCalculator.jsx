@@ -527,7 +527,7 @@ export default function ApplianceEnergyCalculator() {
   const fetchLiveTariffs = async () => {
     try {
       setTariffsLoading(true);
-      const res = await fetch("http://localhost:5000/api/v1/dashboard");
+      const res = await fetch("https://bharatpower.onrender.com/api/v1/dashboard");
       const data = await res.json();
 
       // Transform the statePrices array into the same shape as STATE_TARIFFS
