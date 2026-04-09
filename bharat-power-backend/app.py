@@ -1,12 +1,16 @@
 import requests
 from bs4 import BeautifulSoup
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 import random
 import os
+import json
 
 app = Flask(__name__)
 CORS(app)
+
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyCXbcuI7UN0g0zKGEaq2KYq0u4TGXUxYDE")
+GEMINI_URL     = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
 
 # Use a real browser header to avoid 403 Forbidden errors
 HEADERS = {
@@ -99,5 +103,130 @@ def get_dashboard_data():
     }
     return jsonify(data)
 
+@app.route('/api/v1/carbon-advisor', methods=['POST'])
+def carbon_advisor():
+    """
+    Accepts the user's carbon footprint inputs + computed results,
+    calls Gemini, and returns 3–5 structured advisory tips.
+
+    Expected JSON body:
+    {
+      "timeframe": "Monthly" | "Yearly",
+      "inputs": { electricity, fuelType, fuelQty, vehicleType, vehicleDist,
+                  shortHaulHrs, longHaulHrs, busDist, trainDist,
+                  foodSpend, goodsSpend },
+      "results": { scaledKg, scaledTons, loadPct, treesNeeded,
+                   byCategory: { energyTotal, transportTotal, lifestyleTotal },
+                   breakdown: [{ label, value, pct }],
+                   rating: { rating } }
+    }
+
+    Returns:
+    { "tips": [ { "severity": "normal"|"warn"|"critical", "text": "..." }, ... ] }
+    """
+    body = request.get_json(silent=True) or {}
+    timeframe = body.get("timeframe", "Monthly")
+    inputs    = body.get("inputs",    {})
+    results   = body.get("results",   {})
+
+    # Build a rich, data-dense prompt so Gemini has full context
+    rating_label = results.get("rating", {}).get("rating", "UNKNOWN")
+    scaled_kg    = results.get("scaledKg", 0)
+    trees_needed = results.get("treesNeeded", 0)
+    by_cat       = results.get("byCategory", {})
+    breakdown    = results.get("breakdown",  [])
+
+    breakdown_text = "\n".join(
+        f"  - {b['label']}: {b['value']:.1f} kg ({b['pct']:.0f}%)"
+        for b in sorted(breakdown, key=lambda x: -x.get("value", 0))
+    ) or "  No breakdown data."
+
+    prompt = f"""You are an expert carbon footprint analyst for the Indian context (BharatPower.io platform).
+A user has entered their {timeframe.lower()} carbon footprint data. Analyse it and return 4 to 5 highly specific,
+actionable mitigation tips tailored to the Indian market (reference real Indian schemes, products, or policies where relevant).
+
+=== USER INPUTS ({timeframe}) ===
+- Electricity: {inputs.get('electricity') or 'not entered'} kWh
+- Heating fuel: {inputs.get('fuelType', 'None')} — qty: {inputs.get('fuelQty') or 'not entered'}
+- Vehicle type: {inputs.get('vehicleType', 'None')}
+- Distance driven: {inputs.get('vehicleDist') or '0'} km
+- Short-haul flights: {inputs.get('shortHaulHrs') or '0'} hrs
+- Long-haul flights:  {inputs.get('longHaulHrs') or '0'} hrs
+- Bus distance:   {inputs.get('busDist') or '0'} km
+- Train distance: {inputs.get('trainDist') or '0'} km
+- Food/diet spend:    ₹{inputs.get('foodSpend') or '0'}
+- Goods/shopping:     ₹{inputs.get('goodsSpend') or '0'}
+
+=== COMPUTED RESULTS ===
+- Total CO₂e ({timeframe}): {scaled_kg:.1f} kg
+- Carbon rating: {rating_label}  (Indian avg ~125 kg/month)
+- Trees to offset (annual): {trees_needed}
+- Energy category:    {by_cat.get('energyTotal', 0):.1f} kg
+- Transport category: {by_cat.get('transportTotal', 0):.1f} kg
+- Lifestyle category: {by_cat.get('lifestyleTotal', 0):.1f} kg
+
+=== TOP SOURCES (sorted) ===
+{breakdown_text}
+
+=== OUTPUT FORMAT (strict JSON, no markdown fences) ===
+Return ONLY a JSON object like this:
+{{
+  "tips": [
+    {{ "severity": "normal", "text": "Specific tip here." }},
+    {{ "severity": "warn",   "text": "Another tip." }},
+    {{ "severity": "critical", "text": "Urgent tip." }}
+  ]
+}}
+
+Rules:
+- severity must be one of: "normal", "warn", "critical"
+- Use "critical" only for the single highest-impact action if rating is HIGH or CRITICAL
+- Each tip must be 1–2 sentences, specific, data-backed, and India-relevant
+- Reference exact numbers from the user's data (e.g., "Your {scaled_kg:.0f} kg footprint...")
+- Do NOT give generic advice. Every tip must be personalised to the actual numbers above.
+- Return between 4 and 5 tips total
+- No preamble, no explanation, no markdown — ONLY the JSON object
+"""
+
+    try:
+        resp = requests.post(
+            f"{GEMINI_URL}?key={GEMINI_API_KEY}",
+            json={
+                "contents": [{"parts": [{"text": prompt}]}],
+                "generationConfig": {
+                    "temperature": 0.4,
+                    "maxOutputTokens": 700,
+                }
+            },
+            timeout=15
+        )
+        resp.raise_for_status()
+        raw_text = resp.json()["candidates"][0]["content"]["parts"][0]["text"]
+
+        # Strip any accidental markdown fences
+        clean = raw_text.strip()
+        if clean.startswith("```"):
+            clean = clean.split("```")[1]
+            if clean.startswith("json"):
+                clean = clean[4:]
+        clean = clean.strip().rstrip("`").strip()
+
+        parsed = json.loads(clean)
+        return jsonify(parsed)
+
+    except Exception as e:
+        print(f"Gemini advisor error: {e}")
+        # Graceful fallback — return a single info tip so the UI never breaks
+        return jsonify({
+            "tips": [
+                {"severity": "normal",
+                 "text": "AI advisor temporarily unavailable. Enter your usage data to see personalised recommendations."}
+            ]
+        }), 200
+
+
+# if __name__ == '__main__':
+#   app.run()
+# bottom of app.py
 if __name__ == '__main__':
-  app.run()
+    app.run(port=5001, debug=True)
