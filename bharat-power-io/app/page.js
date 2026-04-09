@@ -1,9 +1,9 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { Zap, Activity, Sun, Shield, Info, TrendingUp, TrendingDown, AlertTriangle, Clock, ChevronRight, Terminal, Radio, Building2 } from "lucide-react";
-import ApplianceEnergyCalculator from '../components/ApplianceEnergyCalculator'
-import DiscomDirectory from '../components/DiscomDirectory';
-import GridMap from '../components/GridMap'
+import ApplianceEnergyCalculator from './ApplianceEnergyCalculator'
+import DiscomDirectory from './DiscomDirectory';
+import GridMap from './GridMap'
 
 // ============================================================
 // MOCK DATA — swap these endpoints for Flask API calls later
@@ -406,7 +406,7 @@ const SolarCalculator = ({ tariffs }) => {
   useEffect(() => {
     const fetchRealTimeData = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/v1/dashboard");
+        const response = await fetch("https://bharatpower.onrender.com/api/v1/dashboard");
         if (!response.ok) throw new Error("Network response was not ok");
         const data = await response.json();
         setLiveData(data);
