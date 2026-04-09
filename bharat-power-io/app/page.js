@@ -406,7 +406,7 @@ const SolarCalculator = ({ tariffs }) => {
   useEffect(() => {
     const fetchRealTimeData = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/v1/dashboard");
+        const response = await fetch("https://bharat-power-backend.onrender.com/api/v1/dashboard");
         if (!response.ok) throw new Error("Network response was not ok");
         const data = await response.json();
         setLiveData(data);
