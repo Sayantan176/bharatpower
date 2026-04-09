@@ -4,6 +4,7 @@ import { Zap, Activity, Sun, Shield, Info, TrendingUp, TrendingDown, AlertTriang
 import ApplianceEnergyCalculator from '../components/ApplianceEnergyCalculator'
 import DiscomDirectory from '../components/DiscomDirectory';
 import GridMap from '../components/GridMap'
+import CarbonFootprintCalculator from '../components/CarbonFootprintCalculator'
 
 // ============================================================
 // MOCK DATA — swap these endpoints for Flask API calls later
@@ -652,6 +653,22 @@ const SolarCalculator = ({ tariffs }) => {
                 <Building2 size={11} style={{ display: "inline", marginRight: "5px" }} />
                 GridMap
               </button>
+              <button
+                onClick={() => setCurrentPage("carbon")}
+                style={{
+                  background: currentPage === "carbon" ? "rgba(59,130,246,0.15)" : "transparent",
+                  border: `1px solid ${currentPage === "carbon" ? "rgba(59,130,246,0.5)" : "rgba(100,116,139,0.3)"}`,
+                  color: currentPage === "carbon" ? "#3b82f6" : "#475569",
+                  fontFamily: "monospace",
+                  fontSize: "11px",
+                  letterSpacing: "0.1em",
+                  padding: "4px 12px",
+                  cursor: "pointer",
+                }}
+              >
+                <Building2 size={11} style={{ display: "inline", marginRight: "5px" }} />
+                carbon
+              </button>
             </div>
             
 
@@ -773,6 +790,10 @@ const SolarCalculator = ({ tariffs }) => {
         ) :  currentPage === "gridmap" ? (
           <div style={{ padding: "16px" }}>
             <GridMap />
+          </div>
+        ) : currentPage === "carbon" ? (
+          <div style={{ padding: "16px" }}>
+            <CarbonFootprintCalculator />
           </div>
         ) : (
         <main className="grid-line" style={{ padding: "16px", display: "grid", gap: "16px", gridTemplateColumns: "1fr 1fr 1fr" }}>
