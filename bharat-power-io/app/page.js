@@ -1,9 +1,9 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { Zap, Activity, Sun, Shield, Info, TrendingUp, TrendingDown, AlertTriangle, Clock, ChevronRight, Terminal, Radio, Building2 } from "lucide-react";
-import ApplianceEnergyCalculator from './ApplianceEnergyCalculator'
-import DiscomDirectory from './DiscomDirectory';
-import GridMap from './GridMap'
+import ApplianceEnergyCalculator from '../components/ApplianceEnergyCalculator'
+import DiscomDirectory from '../components/DiscomDirectory';
+import GridMap from '../components/GridMap'
 
 // ============================================================
 // MOCK DATA — swap these endpoints for Flask API calls later
