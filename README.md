@@ -250,7 +250,7 @@ npx tsc --noEmit
 
 ## License
 
-[MIT](LICENSE) © 2025 [Sayantan176](https://github.com/Sayantan176)
+[MIT](LICENSE) © 2026 [Sayantan176](https://github.com/Sayantan176)
 
 ---
 
